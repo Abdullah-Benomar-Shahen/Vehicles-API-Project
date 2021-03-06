@@ -1,28 +1,25 @@
 package com.udacity.vehicles.api;
 
 
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
-
 import com.udacity.vehicles.domain.car.Car;
+import com.udacity.vehicles.service.CarNotFoundException;
 import com.udacity.vehicles.service.CarService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.hateoas.Resource;
+import org.springframework.hateoas.Resources;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.validation.Valid;
 
-import org.springframework.hateoas.Resource;
-import org.springframework.hateoas.Resources;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
 
 /**
  * Implements a REST-based controller for the Vehicles API.
@@ -30,6 +27,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/cars")
 class CarController {
+
+    private static final Logger log = LoggerFactory.getLogger(CarController.class);
 
     private final CarService carService;
     private final CarResourceAssembler assembler;
@@ -63,7 +62,15 @@ class CarController {
          * TODO: Use the `assembler` on that car and return the resulting output.
          *   Update the first line as part of the above implementing.
          */
-        return assembler.toResource(new Car());
+
+        try {
+            Car requestedCar = carService.findById(id);
+            return assembler.toResource(requestedCar);
+        } catch (CarNotFoundException e){
+            e.printStackTrace();
+            return null;
+            // TODO: HANDLE THE "CAR NOT FOUND EXCP." CURRENTLY IT IS RETURNING 200 ON ERROR
+        }
     }
 
     /**
@@ -74,12 +81,10 @@ class CarController {
      */
     @PostMapping
     ResponseEntity<?> post(@Valid @RequestBody Car car) throws URISyntaxException {
-        /**
-         * TODO: Use the `save` method from the Car Service to save the input car.
-         * TODO: Use the `assembler` on that saved car and return as part of the response.
-         *   Update the first line as part of the above implementing.
-         */
-        Resource<Car> resource = assembler.toResource(new Car());
+        Car createdCar = carService.save(car);
+        log.info(String.format("Car with ID %s was saved successfully in the system!", createdCar.getId()));
+
+        Resource<Car> resource = assembler.toResource(createdCar);
         return ResponseEntity.created(new URI(resource.getId().expand().getHref())).body(resource);
     }
 
@@ -91,13 +96,11 @@ class CarController {
      */
     @PutMapping("/{id}")
     ResponseEntity<?> put(@PathVariable Long id, @Valid @RequestBody Car car) {
-        /**
-         * TODO: Set the id of the input car object to the `id` input.
-         * TODO: Save the car using the `save` method from the Car service
-         * TODO: Use the `assembler` on that updated car and return as part of the response.
-         *   Update the first line as part of the above implementing.
-         */
-        Resource<Car> resource = assembler.toResource(new Car());
+        car.setId(id);
+        Car carToBeUpdated = carService.save(car);
+        log.info(String.format("Car with ID %s was updated successfully in the system!", carToBeUpdated.getId()));
+
+        Resource<Car> resource = assembler.toResource(carToBeUpdated);
         return ResponseEntity.ok(resource);
     }
 
@@ -108,9 +111,19 @@ class CarController {
      */
     @DeleteMapping("/{id}")
     ResponseEntity<?> delete(@PathVariable Long id) {
-        /**
-         * TODO: Use the Car Service to delete the requested vehicle.
-         */
-        return ResponseEntity.noContent().build();
+        try {
+            String successMsg = String.format("Car with ID %s was deleted successfully!", id);
+            carService.delete(id);
+            log.info(successMsg);
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(successMsg);
+        } catch (CarNotFoundException e){
+            log.error(String.format("Deletion of car with ID %s was unsuccessful!", id));
+            return ResponseEntity.
+                    status(HttpStatus.NOT_FOUND)
+                    .body(e.getMessage());
+        }
+
     }
 }

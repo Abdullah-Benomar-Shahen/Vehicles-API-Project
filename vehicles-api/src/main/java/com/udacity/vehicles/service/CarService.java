@@ -1,9 +1,14 @@
 package com.udacity.vehicles.service;
 
+import com.udacity.vehicles.client.maps.MapsClient;
+import com.udacity.vehicles.client.prices.PriceClient;
+import com.udacity.vehicles.domain.Location;
 import com.udacity.vehicles.domain.car.Car;
 import com.udacity.vehicles.domain.car.CarRepository;
-import java.util.List;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Implements the car service create, read, update or delete
@@ -13,14 +18,14 @@ import org.springframework.stereotype.Service;
 @Service
 public class CarService {
 
-    private final CarRepository repository;
+    private final CarRepository carRepository;
+    private final MapsClient mapsClient;
+    private final PriceClient priceClient;
 
-    public CarService(CarRepository repository) {
-        /**
-         * TODO: Add the Maps and Pricing Web Clients you create
-         *   in `VehiclesApiApplication` as arguments and set them here.
-         */
-        this.repository = repository;
+    public CarService(CarRepository carRepository, MapsClient mapsClient, PriceClient priceClient) {
+        this.mapsClient = mapsClient;
+        this.priceClient = priceClient;
+        this.carRepository = carRepository;
     }
 
     /**
@@ -28,7 +33,7 @@ public class CarService {
      * @return a list of all vehicles in the CarRepository
      */
     public List<Car> list() {
-        return repository.findAll();
+        return carRepository.findAll();
     }
 
     /**
@@ -38,11 +43,15 @@ public class CarService {
      */
     public Car findById(Long id) {
         /**
-         * TODO: Find the car by ID from the `repository` if it exists.
+         * TODO: Find the car by ID from the `carRepository` if it exists.
          *   If it does not exist, throw a CarNotFoundException
          *   Remove the below code as part of your implementation.
          */
-        Car car = new Car();
+        Optional<Car> car = carRepository.findById(id);
+
+        if (!car.isPresent())
+            throw new CarNotFoundException("ERROR: Car with ID: " + id + " Not found");
+
 
         /**
          * TODO: Use the Pricing Web client you create in `VehiclesApiApplication`
@@ -51,7 +60,8 @@ public class CarService {
          * Note: The car class file uses @transient, meaning you will need to call
          *   the pricing service each time to get the price.
          */
-
+        String vehiclePrice = priceClient.getPrice(id);
+        car.get().setPrice(vehiclePrice);
 
         /**
          * TODO: Use the Maps Web client you create in `VehiclesApiApplication`
@@ -61,27 +71,29 @@ public class CarService {
          * Note: The Location class file also uses @transient for the address,
          * meaning the Maps service needs to be called each time for the address.
          */
+        Location location = mapsClient.getAddress(car.get().getLocation());
+        car.get().setLocation(location);
 
 
-        return car;
+        return car.get();
     }
 
     /**
      * Either creates or updates a vehicle, based on prior existence of car
      * @param car A car object, which can be either new or existing
-     * @return the new/updated car is stored in the repository
+     * @return the new/updated car is stored in the carRepository
      */
     public Car save(Car car) {
         if (car.getId() != null) {
-            return repository.findById(car.getId())
+            return carRepository.findById(car.getId())
                     .map(carToBeUpdated -> {
                         carToBeUpdated.setDetails(car.getDetails());
                         carToBeUpdated.setLocation(car.getLocation());
-                        return repository.save(carToBeUpdated);
+                        return carRepository.save(carToBeUpdated);
                     }).orElseThrow(CarNotFoundException::new);
         }
 
-        return repository.save(car);
+        return carRepository.save(car);
     }
 
     /**
@@ -89,16 +101,11 @@ public class CarService {
      * @param id the ID number of the car to delete
      */
     public void delete(Long id) {
-        /**
-         * TODO: Find the car by ID from the `repository` if it exists.
-         *   If it does not exist, throw a CarNotFoundException
-         */
-
-
-        /**
-         * TODO: Delete the car from the repository.
-         */
-
-
+        Optional<Car> car = carRepository.findById(id);
+        if (car.isPresent()) {
+            carRepository.deleteById(id);
+        } else {
+            throw new CarNotFoundException("ERROR: Car with ID: ".concat(id.toString()).concat(" Not found"));
+        }
     }
 }

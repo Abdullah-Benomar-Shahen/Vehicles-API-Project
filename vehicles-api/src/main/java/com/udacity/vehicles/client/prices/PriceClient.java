@@ -32,11 +32,12 @@ public class PriceClient {
      */
     public String getPrice(Long vehicleId) {
         try {
+            // Made some changes in order to get the Price from the Pricing Service
             Price price = client
                     .get()
                     .uri(uriBuilder -> uriBuilder
-                            .path("services/price/")
-                            .queryParam("vehicleId", vehicleId)
+                            .path(String.format("/prices/%s", vehicleId))
+                            //.queryParam("vehicleId", vehicleId)
                             .build()
                     )
                     .retrieve().bodyToMono(Price.class).block();
