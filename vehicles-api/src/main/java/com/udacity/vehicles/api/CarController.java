@@ -4,6 +4,8 @@ package com.udacity.vehicles.api;
 import com.udacity.vehicles.domain.car.Car;
 import com.udacity.vehicles.service.CarNotFoundException;
 import com.udacity.vehicles.service.CarService;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.hateoas.Resource;
@@ -26,6 +28,11 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
  */
 @RestController
 @RequestMapping("/cars")
+@ApiResponses(value = {
+        @ApiResponse(code=400, message = "This is a bad request, please follow the API documentation for the proper request format."),
+        @ApiResponse(code=401, message = "Due to security constraints, your access request cannot be authorized. "),
+        @ApiResponse(code=500, message = "The server is down. Please make sure that the Vehicle-API microservice is running.")
+})
 class CarController {
 
     private static final Logger log = LoggerFactory.getLogger(CarController.class);
@@ -57,20 +64,8 @@ class CarController {
      */
     @GetMapping("/{id}")
     Resource<Car> get(@PathVariable Long id) {
-        /**
-         * TODO: Use the `findById` method from the Car Service to get car information.
-         * TODO: Use the `assembler` on that car and return the resulting output.
-         *   Update the first line as part of the above implementing.
-         */
-
-        try {
-            Car requestedCar = carService.findById(id);
-            return assembler.toResource(requestedCar);
-        } catch (CarNotFoundException e){
-            e.printStackTrace();
-            return null;
-            // TODO: HANDLE THE "CAR NOT FOUND EXCP." CURRENTLY IT IS RETURNING 200 ON ERROR
-        }
+        Car requestedCar = carService.findById(id);
+        return assembler.toResource(requestedCar);
     }
 
     /**
