@@ -7,6 +7,7 @@ import com.udacity.vehicles.domain.car.Car;
 import com.udacity.vehicles.domain.car.CarRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,11 +30,19 @@ public class CarService {
     }
 
     /**
+     * NOTE: I have Updated the code to return all Cars with Location and Price information
      * Gathers a list of all vehicles
      * @return a list of all vehicles in the CarRepository
      */
     public List<Car> list() {
-        return carRepository.findAll();
+        List<Car> cars = new ArrayList<>();
+        for(Car car : carRepository.findAll()){
+            // Assign Price and Location to the car
+            car.setPrice(priceClient.getPrice(car.getId()));
+            car.setLocation(mapsClient.getAddress(car.getLocation()));
+            cars.add(car);
+        }
+        return cars;
     }
 
     /**

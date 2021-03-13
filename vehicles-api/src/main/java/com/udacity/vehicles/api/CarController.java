@@ -28,11 +28,6 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
  */
 @RestController
 @RequestMapping("/cars")
-@ApiResponses(value = {
-        @ApiResponse(code=400, message = "This is a bad request, please follow the API documentation for the proper request format."),
-        @ApiResponse(code=401, message = "Due to security constraints, your access request cannot be authorized. "),
-        @ApiResponse(code=500, message = "The server is down. Please make sure that the Vehicle-API microservice is running.")
-})
 class CarController {
 
     private static final Logger log = LoggerFactory.getLogger(CarController.class);
@@ -44,11 +39,16 @@ class CarController {
         this.carService = carService;
         this.assembler = assembler;
     }
-
     /**
      * Creates a list to store any vehicles.
      * @return list of vehicles
      */
+    @ApiResponses(value = {
+            @ApiResponse(code=200, message = "Cars retrieved successfully from the system."),
+            @ApiResponse(code=400, message = "This is a bad request, please follow the API documentation for the proper request format."),
+            @ApiResponse(code=401, message = "Due to security constraints, your access request cannot be authorized. "),
+            @ApiResponse(code=500, message = "The server is down. Please make sure that the Vehicle-API microservice is running.")
+    })
     @GetMapping
     Resources<Resource<Car>> list() {
         List<Resource<Car>> resources = carService.list().stream().map(assembler::toResource)
@@ -62,6 +62,12 @@ class CarController {
      * @param id the id number of the given vehicle
      * @return all information for the requested vehicle
      */
+    @ApiResponses(value = {
+            @ApiResponse(code=200, message = "Car retrieved successfully from the system."),
+            @ApiResponse(code=400, message = "This is a bad request, please follow the API documentation for the proper request format."),
+            @ApiResponse(code=401, message = "Due to security constraints, your access request cannot be authorized. "),
+            @ApiResponse(code=500, message = "The server is down. Please make sure that the Vehicle-API microservice is running.")
+    })
     @GetMapping("/{id}")
     Resource<Car> get(@PathVariable Long id) {
         Car requestedCar = carService.findById(id);
@@ -74,6 +80,12 @@ class CarController {
      * @return response that the new vehicle was added to the system
      * @throws URISyntaxException if the request contains invalid fields or syntax
      */
+    @ApiResponses(value = {
+            @ApiResponse(code=201, message = "Car was saved successfully in the system."),
+            @ApiResponse(code=400, message = "This is a bad request, please follow the API documentation for the proper request format."),
+            @ApiResponse(code=401, message = "Due to security constraints, your access request cannot be authorized. "),
+            @ApiResponse(code=500, message = "The server is down. Please make sure that the Vehicle-API microservice is running.")
+    })
     @PostMapping
     ResponseEntity<?> post(@Valid @RequestBody Car car) throws URISyntaxException {
         Car createdCar = carService.save(car);
@@ -89,6 +101,12 @@ class CarController {
      * @param car The updated information about the related vehicle.
      * @return response that the vehicle was updated in the system
      */
+    @ApiResponses(value = {
+            @ApiResponse(code=201, message = "Car was updated successfully in the system."),
+            @ApiResponse(code=400, message = "This is a bad request, please follow the API documentation for the proper request format."),
+            @ApiResponse(code=401, message = "Due to security constraints, your access request cannot be authorized. "),
+            @ApiResponse(code=500, message = "The server is down. Please make sure that the Vehicle-API microservice is running.")
+    })
     @PutMapping("/{id}")
     ResponseEntity<?> put(@PathVariable Long id, @Valid @RequestBody Car car) {
         car.setId(id);
@@ -104,6 +122,12 @@ class CarController {
      * @param id The ID number of the vehicle to remove.
      * @return response that the related vehicle is no longer in the system
      */
+    @ApiResponses(value = {
+            @ApiResponse(code=201, message = "Car was deleted successfully in the system."),
+            @ApiResponse(code=400, message = "This is a bad request, please follow the API documentation for the proper request format."),
+            @ApiResponse(code=401, message = "Due to security constraints, your access request cannot be authorized. "),
+            @ApiResponse(code=500, message = "The server is down. Please make sure that the Vehicle-API microservice is running.")
+    })
     @DeleteMapping("/{id}")
     ResponseEntity<?> delete(@PathVariable Long id) {
         try {
